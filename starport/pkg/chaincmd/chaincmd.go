@@ -46,6 +46,8 @@ const (
 	optionVestingAmount                    = "--vesting-amount"
 	optionVestingEndTime                   = "--vesting-end-time"
 	optionBroadcastMode                    = "--broadcast-mode"
+	optionGas							   = "--gas"
+	optionGasAdjustment					   = "--gas-adjustment"
 
 	constTendermint = "tendermint"
 	constJSON       = "json"
@@ -73,6 +75,9 @@ type ChainCmd struct {
 	cliHome         string
 	nodeAddress     string
 	legacySend      bool
+	gas				string
+	gasPrices		string
+	gasAdjustment	string
 
 	isAutoChainIDDetectionEnabled bool
 
@@ -179,6 +184,30 @@ func WithLaunchpadCLIHome(cliHome string) Option {
 func WithLegacySendCommand() Option {
 	return func(c *ChainCmd) {
 		c.legacySend = true
+	}
+}
+
+// WithGasCommand will make the command explicitly set the gas
+// currently an open issue and needed for the cheqd organisation
+func WithGasCommand(gas string) Option {
+	return func(c *ChainCmd) {
+		c.gas = gas
+	}
+}
+
+// WithGasPricesCommand will make the command explicitly set the gas prices mode
+// currently an open issue and needed for the cheqd organisation
+func WithGasPricesCommand(gasPrices string) Option {
+	return func(c *ChainCmd) {
+		c.gasPrices = gasPrices
+	}
+}
+
+// WithGasPricesCommand will make the command explicitly set the gas adjustment range
+// currently an open issue and needed for the cheqd organisation
+func WithGasAdjustmentCommand(gasAdjustment string) Option {
+	return func(c *ChainCmd) {
+		c.gasAdjustment = gasAdjustment
 	}
 }
 
@@ -527,6 +556,11 @@ func (c ChainCmd) BankSendCommand(fromAddress, toAddress, amount string) step.Op
 	command = c.attachKeyringBackend(command)
 	command = c.attachNode(command)
 
+	// cheqd organisation
+	command = c.attachGas(command)
+	command = c.attachGasPrices(command)
+	command = c.attachGasAdjustment(command)
+
 	if c.sdkVersion.IsFamily(cosmosver.Launchpad) {
 		command = append(command, optionOutput, constJSON)
 	}
@@ -621,6 +655,30 @@ func (c ChainCmd) attachHome(command []string) []string {
 func (c ChainCmd) attachNode(command []string) []string {
 	if c.nodeAddress != "" {
 		command = append(command, []string{optionNode, c.nodeAddress}...)
+	}
+	return command
+}
+
+// attachGas appends the node flag to the provided command
+func (c ChainCmd) attachGas(command []string) []string {
+	if c.gas != "" {
+		command = append(command, []string{optionGas, c.gas}...)
+	}
+	return command
+}
+
+// attachGasPrices appends the node flag to the provided command
+func (c ChainCmd) attachGasPrices(command []string) []string {
+	if c.gasPrices != "" {
+		command = append(command, []string{optionValidatorGasPrices, c.gasPrices}...)
+	}
+	return command
+}
+
+// attachGasAdjustment appends the node flag to the provided command
+func (c ChainCmd) attachGasAdjustment(command []string) []string {
+	if c.gasAdjustment != "" {
+		command = append(command, []string{optionGasAdjustment, c.gasAdjustment}...)
 	}
 	return command
 }
